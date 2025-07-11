@@ -7,26 +7,26 @@ const handleMessage = require('./utils/messageHandler');
 const app = express();
 app.use(bodyParser.json());
 
-// EMERGENCY DEBUGGING: Webhook endpoint
 app.post('/webhook', async (req, res) => {
     try {
-        // Print entire incoming request for debugging
         console.log("📩 RAW INCOMING:", JSON.stringify(req.body, null, 2));
 
-        const { from, body } = req.body;
+        const data = req.body.data;
 
-        if (!from || !body) {
+        // Check if data exists
+        if (!data || !data.from || !data.body) {
             console.log("⚠️ Missing 'from' or 'body' in request");
             return res.sendStatus(400);
         }
 
-        const messageText = body.trim().toLowerCase();
-        console.log("📝 Parsed Message:", messageText);
+        const from = data.from.replace("@c.us", ""); // Clean number
+        const body = data.body.trim().toLowerCase();
+        console.log("📝 Parsed:", body);
 
-        const reply = handleMessage(messageText);
+        const reply = handleMessage(body);
 
         if (reply) {
-            console.log("🔁 Replying with:", reply);
+            console.log("🔁 Replying to", from, "with:", reply);
 
             await axios.post(`https://api.ultramsg.com/${process.env.INSTANCE_ID}/messages/chat`, {
                 token: process.env.TOKEN,
@@ -34,19 +34,18 @@ app.post('/webhook', async (req, res) => {
                 body: reply
             });
 
-            console.log("✅ Sent reply to:", from);
+            console.log("✅ Sent");
         } else {
-            console.log("🤷 No matching reply for:", messageText);
+            console.log("🤷 No reply matched.");
         }
 
         res.sendStatus(200);
     } catch (error) {
-        console.error("❌ ERROR in webhook:", error);
+        console.error("❌ Error:", error.message);
         res.sendStatus(500);
     }
 });
 
-// Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Mathanda WhatsApp Bot is live on port ${PORT}`);
