@@ -5,43 +5,45 @@ const axios = require('axios');
 const handleMessage = require('./utils/messageHandler');
 
 const app = express();
+
+// Accept both JSON and URL-encoded form data
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.post('/webhook', async (req, res) => {
     try {
-        console.log("📩 RAW INCOMING:", JSON.stringify(req.body, null, 2));
+        const payload = req.body;
 
-        const data = req.body.data;
+        // Handle if UltraMsg sends payload in `data` object
+        const data = payload.data || payload;
 
-        // Check if data exists
-        if (!data || !data.from || !data.body) {
+        console.log("📩 RAW INCOMING:", JSON.stringify(data, null, 2));
+
+        const from = data.from ? data.from.replace("@c.us", "") : null;
+        const body = data.body ? data.body.trim().toLowerCase() : null;
+
+        if (!from || !body) {
             console.log("⚠️ Missing 'from' or 'body' in request");
             return res.sendStatus(400);
         }
-
-        const from = data.from.replace("@c.us", ""); // Clean number
-        const body = data.body.trim().toLowerCase();
-        console.log("📝 Parsed:", body);
 
         const reply = handleMessage(body);
 
         if (reply) {
             console.log("🔁 Replying to", from, "with:", reply);
-
             await axios.post(`https://api.ultramsg.com/${process.env.INSTANCE_ID}/messages/chat`, {
                 token: process.env.TOKEN,
                 to: from,
                 body: reply
             });
-
-            console.log("✅ Sent");
+            console.log("✅ Message sent to", from);
         } else {
-            console.log("🤷 No reply matched.");
+            console.log("🤷 No reply matched for:", body);
         }
 
         res.sendStatus(200);
     } catch (error) {
-        console.error("❌ Error:", error.message);
+        console.error("❌ ERROR:", error.message);
         res.sendStatus(500);
     }
 });
