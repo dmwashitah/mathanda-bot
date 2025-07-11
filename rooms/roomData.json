@@ -1,0 +1,14 @@
+[
+  {
+    "caption": "Standard Room",
+    "description": "A cozy room with basic amenities for 2 guests.",
+    "price": "$30 per night",
+    "image": "https://example.com/images/standard.jpg"
+  },
+  {
+    "caption": "Deluxe Room",
+    "description": "Spacious room with ensuite and balcony.",
+    "price": "$50 per night",
+    "image": "https://example.com/images/deluxe.jpg"
+  }
+]
